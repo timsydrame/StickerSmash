@@ -5,12 +5,7 @@ export default function ImageViewer({ placeholderImageSource, selectedImage }) {
     ? { uri: selectedImage }
     : placeholderImageSource;
 
-  return (
-    <Image
-      source={imageSource}
-      style={styles.image}
-    />
-  );
+  return <Image source={imageSource} style={styles.image} />;
 }
 
 const styles = StyleSheet.create({
