@@ -10,41 +10,64 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+const AnimatedView = Animated.createAnimatedComponent(View);
+
 export default function EmojiSticker({ imageSize, stickerSource }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const scaleImage = useSharedValue(imageSize);
 
-  const onGestureEvent = useAnimatedGestureHandler({
-    onPanGestureEvent: (event) => {
-      translateX.value = event.translationX;
-      translateY.value = event.translationY;
-    },
-    onPanGestureEnd: () => {
-      translateX.value = withSpring(0);
-      translateY.value = withSpring(0);
+  const imageStyle = useAnimatedStyle(() => {
+    return {
+      width: withSpring(scaleImage.value),
+      height: withSpring(scaleImage.value),
+    };
+  });
+
+  const onDoubleTap = useAnimatedGestureHandler({
+    onActive: () => {
+      if (scaleImage.value) {
+        scaleImage.value = scaleImage.value * 2;
+      }
     },
   });
 
-  const animatedStyle = useAnimatedStyle(() => {
+  const onDrag = useAnimatedGestureHandler({
+    onStart: (event, context) => {
+      context.translateX = translateX.value;
+      context.translateY = translateY.value;
+    },
+    onActive: (event, context) => {
+      translateX.value = event.translationX + context.translateX;
+      translateY.value = event.translationY + context.translateY;
+    },
+  });
+
+  const containerStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
+        {
+          translateX: translateX.value,
+        },
+        {
+          translateY: translateY.value,
+        },
       ],
     };
-  }, []); // Ajoutez une dépendance vide ici
+  });
 
   return (
-    <View style={{ top: -350 }}>
-      <PanGestureHandler onGestureEvent={onGestureEvent}>
-        <Animated.View style={[animatedStyle, { zIndex: 2 }]}>
-          <Image
+    <PanGestureHandler onGestureEvent={onDrag}>
+      <AnimatedView style={[containerStyle, { top: -350 }]}>
+        <TapGestureHandler onGestureEvent={onDoubleTap} numberOfTaps={2}>
+          <AnimatedImage
             source={stickerSource}
             resizeMode="contain"
-            style={{ width: imageSize, height: imageSize }}
+            style={[imageStyle, { width: imageSize, height: imageSize }]}
           />
-        </Animated.View>
-      </PanGestureHandler>
-    </View>
+        </TapGestureHandler>
+      </AnimatedView>
+    </PanGestureHandler>
   );
 }
